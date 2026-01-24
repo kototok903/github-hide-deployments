@@ -21,17 +21,41 @@
       </button>
     </div>
 
+    <div class="section-header">Timeline Deployments</div>
+
     <label class="switch-row">
+      <span class="label-text">Hide all deployment messages</span>
+      <input type="checkbox" id="hideAllDeployments">
+      <span class="slider"></span>
+    </label>
+
+    <label class="switch-row subsetting" id="hideOldDeploymentsRow">
       <span class="label-text">Hide old deployments</span>
       <input type="checkbox" id="hideOldDeployments">
       <span class="slider"></span>
     </label>
 
-    <label class="switch-row">
+    <label class="switch-row subsetting last" id="hideDestroyedDeploymentsRow">
       <span class="label-text">Hide destroyed deployments</span>
       <input type="checkbox" id="hideDestroyedDeployments">
       <span class="slider"></span>
     </label>
+
+    <div class="section-header">Environments Box</div>
+
+    <label class="switch-row">
+      <span class="label-text">Auto-expand environments</span>
+      <input type="checkbox" id="autoExpandEnvironments">
+      <span class="slider"></span>
+    </label>
+
+    <label class="switch-row subsetting last" id="environmentsFullHeightRow">
+      <span class="label-text">Full height</span>
+      <input type="checkbox" id="environmentsFullHeight">
+      <span class="slider"></span>
+    </label>
+
+    <div class="section-header">Load More</div>
 
     <label class="switch-row">
       <span class="label-text">Expand "Load more..."</span>
@@ -39,7 +63,7 @@
       <span class="slider"></span>
     </label>
 
-    <div class="subsetting-row" id="expansionLimitRow">
+    <div class="subsetting-row last" id="expansionLimitRow">
       <span class="label-text">Expansion limit</span>
       <input type="number" id="expansionLimit" min="1" max="99" value="2">
     </div>

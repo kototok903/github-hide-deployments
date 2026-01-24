@@ -1,8 +1,11 @@
 // Default settings
 const DEFAULT_SETTINGS = {
   enabled: true,
+  hideAllDeployments: false,
   hideOldDeployments: true,
   hideDestroyedDeployments: true,
+  autoExpandEnvironments: false,
+  environmentsFullHeight: false,
   autoExpandLoadMore: false,
   expansionLimit: 2,
 };
@@ -12,12 +15,17 @@ function updateEnabledState(enabled) {
   const powerButton = document.getElementById('powerButton');
   const switchRows = document.querySelectorAll('.switch-row');
   const subsettingRows = document.querySelectorAll('.subsetting-row');
+  const sectionHeaders = document.querySelectorAll('.section-header');
 
   powerButton.classList.toggle('on', enabled);
   powerButton.classList.toggle('off', !enabled);
 
   switchRows.forEach((row) => {
     row.classList.toggle('disabled', !enabled);
+  });
+
+  sectionHeaders.forEach((header) => {
+    header.classList.toggle('disabled', !enabled);
   });
 
   // Also disable subsetting rows when extension is off
@@ -27,8 +35,27 @@ function updateEnabledState(enabled) {
     });
   } else {
     // Re-evaluate subsetting states based on their parent toggles
+    updateHideAllState();
+    updateEnvironmentsFullHeightState();
     updateExpansionLimitState();
   }
+}
+
+// Update old/destroyed deployment toggles based on hide-all state
+function updateHideAllState() {
+  const hideAllEnabled = document.getElementById('hideAllDeployments').checked;
+  const hideOldRow = document.getElementById('hideOldDeploymentsRow');
+  const hideDestroyedRow = document.getElementById('hideDestroyedDeploymentsRow');
+
+  hideOldRow.classList.toggle('disabled', hideAllEnabled);
+  hideDestroyedRow.classList.toggle('disabled', hideAllEnabled);
+}
+
+// Update environments full height toggle state based on autoExpandEnvironments toggle
+function updateEnvironmentsFullHeightState() {
+  const autoExpandEnabled = document.getElementById('autoExpandEnvironments').checked;
+  const fullHeightRow = document.getElementById('environmentsFullHeightRow');
+  fullHeightRow.classList.toggle('disabled', !autoExpandEnabled);
 }
 
 // Update expansion limit input state based on autoExpandLoadMore toggle
@@ -42,11 +69,16 @@ function updateExpansionLimitState() {
 async function loadSettings() {
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
+  document.getElementById('hideAllDeployments').checked = settings.hideAllDeployments;
   document.getElementById('hideOldDeployments').checked = settings.hideOldDeployments;
   document.getElementById('hideDestroyedDeployments').checked = settings.hideDestroyedDeployments;
+  document.getElementById('autoExpandEnvironments').checked = settings.autoExpandEnvironments;
+  document.getElementById('environmentsFullHeight').checked = settings.environmentsFullHeight;
   document.getElementById('autoExpandLoadMore').checked = settings.autoExpandLoadMore;
   document.getElementById('expansionLimit').value = settings.expansionLimit;
   updateEnabledState(settings.enabled);
+  updateHideAllState();
+  updateEnvironmentsFullHeightState();
   updateExpansionLimitState();
 }
 
@@ -73,12 +105,26 @@ document.addEventListener('DOMContentLoaded', () => {
     saveSetting('enabled', newEnabled);
   });
 
+  document.getElementById('hideAllDeployments').addEventListener('change', (e) => {
+    saveSetting('hideAllDeployments', e.target.checked);
+    updateHideAllState();
+  });
+
   document.getElementById('hideOldDeployments').addEventListener('change', (e) => {
     saveSetting('hideOldDeployments', e.target.checked);
   });
 
   document.getElementById('hideDestroyedDeployments').addEventListener('change', (e) => {
     saveSetting('hideDestroyedDeployments', e.target.checked);
+  });
+
+  document.getElementById('autoExpandEnvironments').addEventListener('change', (e) => {
+    saveSetting('autoExpandEnvironments', e.target.checked);
+    updateEnvironmentsFullHeightState();
+  });
+
+  document.getElementById('environmentsFullHeight').addEventListener('change', (e) => {
+    saveSetting('environmentsFullHeight', e.target.checked);
   });
 
   document.getElementById('autoExpandLoadMore').addEventListener('change', (e) => {

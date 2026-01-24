@@ -6,8 +6,11 @@
 // Current settings
 let settings = {
   enabled: true,
+  hideAllDeployments: false,
   hideOldDeployments: true,
   hideDestroyedDeployments: true,
+  autoExpandEnvironments: false,
+  environmentsFullHeight: false,
   autoExpandLoadMore: false,
   expansionLimit: 2,
 };
@@ -16,6 +19,7 @@ let settings = {
 let expansionCount = 0;
 
 // CSS classes for each type (so we can toggle them independently)
+const CLASS_ALL_DEPLOYMENT = 'gh-hide-all-deployment';
 const CLASS_OLD_DEPLOYMENT = 'gh-hide-old-deployment';
 const CLASS_DESTROYED_DEPLOYMENT = 'gh-hide-destroyed-deployment';
 
@@ -40,12 +44,8 @@ function hideDestroyedDeployments() {
   destroyedLabels.forEach((label) => {
     const container = label.closest('.js-socket-channel, .js-timeline-item');
     if (container) {
-      // Mark it as a destroyed deployment (for potential unhiding later)
       container.dataset.destroyedDeployment = 'true';
-
-      if (settings.hideDestroyedDeployments) {
-        container.classList.add(CLASS_DESTROYED_DEPLOYMENT);
-      }
+      container.classList.add(CLASS_DESTROYED_DEPLOYMENT);
     }
   });
 }
@@ -56,6 +56,61 @@ function hideDestroyedDeployments() {
 function showDestroyedDeployments() {
   document.querySelectorAll(`.${CLASS_DESTROYED_DEPLOYMENT}`).forEach((el) => {
     el.classList.remove(CLASS_DESTROYED_DEPLOYMENT);
+  });
+}
+
+/**
+ * Hides ALL deployment messages in the timeline
+ */
+function hideAllDeployments() {
+  const deploymentContainers = document.querySelectorAll('[data-url*="/partials/deployed_event/"]');
+  deploymentContainers.forEach((container) => {
+    container.classList.add(CLASS_ALL_DEPLOYMENT);
+  });
+}
+
+/**
+ * Shows all deployment messages that were hidden by hideAllDeployments
+ */
+function showAllDeployments() {
+  document.querySelectorAll(`.${CLASS_ALL_DEPLOYMENT}`).forEach((el) => {
+    el.classList.remove(CLASS_ALL_DEPLOYMENT);
+  });
+}
+
+/**
+ * Auto-expand the "Show environments" button
+ */
+function expandEnvironments() {
+  const envContainers = document.querySelectorAll('.js-details-container.branch-action-item');
+  envContainers.forEach((container) => {
+    const button = container.querySelector('button.js-details-target[aria-expanded="false"]');
+    if (button) {
+      const closedSpan = button.querySelector('.statuses-toggle-closed');
+      if (closedSpan && closedSpan.textContent.includes('Show environments')) {
+        button.click();
+      }
+    }
+  });
+}
+
+/**
+ * Make environments list full height (remove max-height constraint)
+ */
+function setEnvironmentsFullHeight() {
+  const envLists = document.querySelectorAll('.merge-status-list');
+  envLists.forEach((list) => {
+    list.style.maxHeight = 'none';
+  });
+}
+
+/**
+ * Reset environments list to default height
+ */
+function resetEnvironmentsHeight() {
+  const envLists = document.querySelectorAll('.merge-status-list');
+  envLists.forEach((list) => {
+    list.style.maxHeight = '';
   });
 }
 
@@ -90,12 +145,8 @@ function hideOldDeployments() {
 
     // Deployments appear in DOM order (oldest first), so hide all except the last one
     for (let i = 0; i < deployments.length - 1; i++) {
-      // Mark it as an old deployment
       deployments[i].dataset.oldDeployment = 'true';
-
-      if (settings.hideOldDeployments) {
-        deployments[i].classList.add(CLASS_OLD_DEPLOYMENT);
-      }
+      deployments[i].classList.add(CLASS_OLD_DEPLOYMENT);
     }
   });
 }
@@ -113,10 +164,6 @@ function showOldDeployments() {
  * Find and click "Load more" buttons to expand the timeline
  */
 function expandLoadMore() {
-  if (!settings.enabled || !settings.autoExpandLoadMore) {
-    return;
-  }
-
   if (expansionCount >= settings.expansionLimit) {
     return;
   }
@@ -141,21 +188,42 @@ function expandLoadMore() {
 function applySettings() {
   // If extension is disabled, show everything
   if (!settings.enabled) {
+    showAllDeployments();
     showOldDeployments();
     showDestroyedDeployments();
     return;
   }
 
-  if (settings.hideOldDeployments) {
-    hideOldDeployments();
+  // Hide all takes precedence over individual hide settings
+  if (settings.hideAllDeployments) {
+    hideAllDeployments();
+    hideDestroyedDeployments(); // Destroyed deployments have different DOM structure
   } else {
-    showOldDeployments();
+    showAllDeployments();
+
+    if (settings.hideOldDeployments) {
+      hideOldDeployments();
+    } else {
+      showOldDeployments();
+    }
+
+    if (settings.hideDestroyedDeployments) {
+      hideDestroyedDeployments();
+    } else {
+      showDestroyedDeployments();
+    }
   }
 
-  if (settings.hideDestroyedDeployments) {
-    hideDestroyedDeployments();
+  // Handle auto-expand features
+  if (settings.autoExpandEnvironments) {
+    expandEnvironments();
+  }
+
+  // Handle environments full height
+  if (settings.environmentsFullHeight) {
+    setEnvironmentsFullHeight();
   } else {
-    showDestroyedDeployments();
+    resetEnvironmentsHeight();
   }
 }
 
@@ -166,9 +234,30 @@ function processPage() {
   if (!settings.enabled) {
     return;
   }
-  hideOldDeployments();
-  hideDestroyedDeployments();
-  expandLoadMore();
+
+  // Handle deployment visibility
+  if (settings.hideAllDeployments) {
+    hideAllDeployments();
+    hideDestroyedDeployments();
+  } else {
+    if (settings.hideOldDeployments) {
+      hideOldDeployments();
+    }
+    if (settings.hideDestroyedDeployments) {
+      hideDestroyedDeployments();
+    }
+  }
+
+  // Handle auto-expand features
+  if (settings.autoExpandEnvironments) {
+    expandEnvironments();
+    if (settings.environmentsFullHeight) {
+      setEnvironmentsFullHeight();
+    }
+  }
+  if (settings.autoExpandLoadMore) {
+    expandLoadMore();
+  }
 }
 
 // Listen for settings changes from popup
@@ -220,13 +309,42 @@ async function init() {
       })
     );
 
-    if (hasNewDeployments) {
-      hideOldDeployments();
-      hideDestroyedDeployments();
+    // Check if environments container appeared
+    const hasNewEnvironments = mutations.some((mutation) =>
+      Array.from(mutation.addedNodes).some((node) => {
+        if (node.nodeType !== 1) return false;
+        return (
+          node.matches?.('.js-details-container.branch-action-item') ||
+          node.querySelector?.('.js-details-container.branch-action-item')
+        );
+      })
+    );
+
+    if (hasNewDeployments && settings.enabled) {
+      if (settings.hideAllDeployments) {
+        hideAllDeployments();
+        hideDestroyedDeployments();
+      } else {
+        if (settings.hideOldDeployments) {
+          hideOldDeployments();
+        }
+        if (settings.hideDestroyedDeployments) {
+          hideDestroyedDeployments();
+        }
+      }
     }
 
-    if (hasNewTimelineContent) {
+    if (hasNewTimelineContent && settings.enabled && settings.autoExpandLoadMore) {
       expandLoadMore();
+    }
+
+    if (hasNewEnvironments && settings.enabled) {
+      if (settings.autoExpandEnvironments) {
+        expandEnvironments();
+      }
+      if (settings.environmentsFullHeight) {
+        setEnvironmentsFullHeight();
+      }
     }
   });
 
