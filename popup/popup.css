@@ -110,6 +110,60 @@ h1 svg {
   margin-right: 12px;
 }
 
+.label-text .tooltip-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 2px;
+  vertical-align: middle;
+  cursor: help;
+  color: #888;
+}
+
+.label-text .tooltip-icon::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  transform: translateY(-4px);
+  background-color: #333;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  min-width: 50vw;
+  max-width: 90vw;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 10;
+}
+
+.label-text .tooltip-icon:hover::after {
+  opacity: 1;
+}
+
+.label-text .tooltip-icon.left::after {
+  right: auto;
+  left: 0;
+}
+
+.label-text .tooltip-icon.right::after {
+  right: 0;
+  left: auto;
+}
+
+.label-text .tooltip-icon.center::after {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.label-text svg {
+  vertical-align: middle;
+}
+
 /* Toggle switch styles */
 .switch-row input[type="checkbox"] {
   display: none;
