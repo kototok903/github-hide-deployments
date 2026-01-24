@@ -2,6 +2,8 @@
 
 A Chrome extension that hides old deployment messages in GitHub PR timelines, keeping only the most recent deployment per environment.
 
+<img width="300" alt="Extension menu screenshot" src="https://github.com/user-attachments/assets/b5380a14-a490-4d48-b0f0-9fdaabc2c3a2" />
+
 ## What it does
 
 GitHub PR timelines can get cluttered with deployment messages, especially in active repositories with frequent deployments. This extension cleans up the timeline by:
