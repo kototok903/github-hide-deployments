@@ -195,8 +195,11 @@ async function init() {
     const hasNewDeployments = mutations.some((mutation) =>
       Array.from(mutation.addedNodes).some((node) => {
         if (node.nodeType !== 1) return false;
+        // Check both the node itself AND its descendants
         return (
+          node.matches?.('[data-url*="/partials/deployed_event/"]') ||
           node.querySelector?.('[data-url*="/partials/deployed_event/"]') ||
+          node.matches?.('.Label[title="Deployment Status Label: Destroyed"]') ||
           node.querySelector?.('.Label[title="Deployment Status Label: Destroyed"]')
         );
       })
@@ -206,9 +209,12 @@ async function init() {
     const hasNewTimelineContent = mutations.some((mutation) =>
       Array.from(mutation.addedNodes).some((node) => {
         if (node.nodeType !== 1) return false;
+        // Check both the node itself AND its descendants
         return (
+          node.matches?.('.TimelineItem') ||
           node.classList?.contains('TimelineItem') ||
           node.querySelector?.('.TimelineItem') ||
+          node.matches?.('button.ajax-pagination-btn') ||
           node.querySelector?.('button.ajax-pagination-btn')
         );
       })
