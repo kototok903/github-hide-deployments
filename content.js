@@ -6,13 +6,13 @@
 // Current settings
 let settings = {
   enabled: true,
-  hideAllDeployments: false,
-  hideOldDeployments: true,
+  hideSuccessfulDeployments: true,
+  hideOldSuccessfulDeployments: true,
   hideDestroyedDeployments: true,
-  hideFailedDeployments: true,
-  autoExpandEnvironments: false,
-  environmentsFullHeight: false,
-  autoExpandLoadMore: false,
+  hideFailedDeployments: false,
+  autoExpandEnvironments: true,
+  environmentsFullHeight: true,
+  autoExpandLoadMore: true,
   expansionLimit: 2,
 };
 
@@ -20,7 +20,7 @@ let settings = {
 let expansionCount = 0;
 
 // CSS classes for each type (so we can toggle them independently)
-const CLASS_ALL_DEPLOYMENT = 'gh-hide-all-deployment';
+const CLASS_SUCCESSFUL_DEPLOYMENT = 'gh-hide-successful-deployment';
 const CLASS_OLD_DEPLOYMENT = 'gh-hide-old-deployment';
 const CLASS_DESTROYED_DEPLOYMENT = 'gh-hide-destroyed-deployment';
 const CLASS_FAILED_DEPLOYMENT = 'gh-hide-failed-deployment';
@@ -88,19 +88,19 @@ function showFailedDeployments() {
 /**
  * Hides ALL deployment messages in the timeline
  */
-function hideAllDeployments() {
+function hideSuccessfulDeployments() {
   const deploymentContainers = document.querySelectorAll('[data-url*="/partials/deployed_event/"]');
   deploymentContainers.forEach((container) => {
-    container.classList.add(CLASS_ALL_DEPLOYMENT);
+    container.classList.add(CLASS_SUCCESSFUL_DEPLOYMENT);
   });
 }
 
 /**
- * Shows all deployment messages that were hidden by hideAllDeployments
+ * Shows all successful deployment messages
  */
-function showAllDeployments() {
-  document.querySelectorAll(`.${CLASS_ALL_DEPLOYMENT}`).forEach((el) => {
-    el.classList.remove(CLASS_ALL_DEPLOYMENT);
+function showSuccessfulDeployments() {
+  document.querySelectorAll(`.${CLASS_SUCCESSFUL_DEPLOYMENT}`).forEach((el) => {
+    el.classList.remove(CLASS_SUCCESSFUL_DEPLOYMENT);
   });
 }
 
@@ -143,7 +143,7 @@ function resetEnvironmentsHeight() {
 /**
  * Hides old deployments (keeps most recent per environment)
  */
-function hideOldDeployments() {
+function hideOldSuccessfulDeployments() {
   const deploymentContainers = document.querySelectorAll('[data-url*="/partials/deployed_event/"]');
 
   if (deploymentContainers.length === 0) {
@@ -214,38 +214,37 @@ function expandLoadMore() {
 function applySettings() {
   // If extension is disabled, show everything
   if (!settings.enabled) {
-    showAllDeployments();
+    showSuccessfulDeployments();
     showOldDeployments();
     showDestroyedDeployments();
     showFailedDeployments();
     return;
   }
 
-  // Hide all takes precedence over individual hide settings
-  if (settings.hideAllDeployments) {
-    hideAllDeployments();
-    hideDestroyedDeployments();
-    hideFailedDeployments();
+  // Handle successful deployments (hideSuccessfulDeployments takes precedence over hideOldSuccessfulDeployments)
+  if (settings.hideSuccessfulDeployments) {
+    hideSuccessfulDeployments();
   } else {
-    showAllDeployments();
-
-    if (settings.hideOldDeployments) {
-      hideOldDeployments();
+    showSuccessfulDeployments();
+    if (settings.hideOldSuccessfulDeployments) {
+      hideOldSuccessfulDeployments();
     } else {
       showOldDeployments();
     }
+  }
 
-    if (settings.hideDestroyedDeployments) {
-      hideDestroyedDeployments();
-    } else {
-      showDestroyedDeployments();
-    }
+  // Handle destroyed deployments
+  if (settings.hideDestroyedDeployments) {
+    hideDestroyedDeployments();
+  } else {
+    showDestroyedDeployments();
+  }
 
-    if (settings.hideFailedDeployments) {
-      hideFailedDeployments();
-    } else {
-      showFailedDeployments();
-    }
+  // Handle failed deployments
+  if (settings.hideFailedDeployments) {
+    hideFailedDeployments();
+  } else {
+    showFailedDeployments();
   }
 
   // Handle auto-expand features
@@ -269,21 +268,21 @@ function processPage() {
     return;
   }
 
-  // Handle deployment visibility
-  if (settings.hideAllDeployments) {
-    hideAllDeployments();
+  // Handle successful deployments
+  if (settings.hideSuccessfulDeployments) {
+    hideSuccessfulDeployments();
+  } else if (settings.hideOldSuccessfulDeployments) {
+    hideOldSuccessfulDeployments();
+  }
+
+  // Handle destroyed deployments
+  if (settings.hideDestroyedDeployments) {
     hideDestroyedDeployments();
+  }
+
+  // Handle failed deployments
+  if (settings.hideFailedDeployments) {
     hideFailedDeployments();
-  } else {
-    if (settings.hideOldDeployments) {
-      hideOldDeployments();
-    }
-    if (settings.hideDestroyedDeployments) {
-      hideDestroyedDeployments();
-    }
-    if (settings.hideFailedDeployments) {
-      hideFailedDeployments();
-    }
   }
 
   // Handle auto-expand features
@@ -361,20 +360,21 @@ async function init() {
     );
 
     if (hasNewDeployments && settings.enabled) {
-      if (settings.hideAllDeployments) {
-        hideAllDeployments();
+      // Handle successful deployments
+      if (settings.hideSuccessfulDeployments) {
+        hideSuccessfulDeployments();
+      } else if (settings.hideOldSuccessfulDeployments) {
+        hideOldSuccessfulDeployments();
+      }
+
+      // Handle destroyed deployments (independent)
+      if (settings.hideDestroyedDeployments) {
         hideDestroyedDeployments();
+      }
+
+      // Handle failed deployments (independent)
+      if (settings.hideFailedDeployments) {
         hideFailedDeployments();
-      } else {
-        if (settings.hideOldDeployments) {
-          hideOldDeployments();
-        }
-        if (settings.hideDestroyedDeployments) {
-          hideDestroyedDeployments();
-        }
-        if (settings.hideFailedDeployments) {
-          hideFailedDeployments();
-        }
       }
     }
 

@@ -1,10 +1,10 @@
 // Default settings
 const DEFAULT_SETTINGS = {
   enabled: true,
-  hideAllDeployments: true,
-  hideOldDeployments: true,
+  hideSuccessfulDeployments: true,
+  hideOldSuccessfulDeployments: true,
   hideDestroyedDeployments: true,
-  hideFailedDeployments: true,
+  hideFailedDeployments: false,
   autoExpandEnvironments: true,
   environmentsFullHeight: true,
   autoExpandLoadMore: true,
@@ -36,22 +36,18 @@ function updateEnabledState(enabled) {
     });
   } else {
     // Re-evaluate subsetting states based on their parent toggles
-    updateHideAllState();
+    updateHideSuccessfulState();
     updateEnvironmentsFullHeightState();
     updateExpansionLimitState();
   }
 }
 
 // Update old/destroyed/failed deployment toggles based on hide-all state
-function updateHideAllState() {
-  const hideAllEnabled = document.getElementById('hideAllDeployments').checked;
-  const hideOldRow = document.getElementById('hideOldDeploymentsRow');
-  const hideDestroyedRow = document.getElementById('hideDestroyedDeploymentsRow');
-  const hideFailedRow = document.getElementById('hideFailedDeploymentsRow');
+function updateHideSuccessfulState() {
+  const hideAllEnabled = document.getElementById('hideSuccessfulDeployments').checked;
+  const hideOldRow = document.getElementById('hideOldSuccessfulDeploymentsRow');
 
   hideOldRow.classList.toggle('disabled', hideAllEnabled);
-  hideDestroyedRow.classList.toggle('disabled', hideAllEnabled);
-  hideFailedRow.classList.toggle('disabled', hideAllEnabled);
 }
 
 // Update environments full height toggle state based on autoExpandEnvironments toggle
@@ -72,8 +68,8 @@ function updateExpansionLimitState() {
 async function loadSettings() {
   const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
 
-  document.getElementById('hideAllDeployments').checked = settings.hideAllDeployments;
-  document.getElementById('hideOldDeployments').checked = settings.hideOldDeployments;
+  document.getElementById('hideSuccessfulDeployments').checked = settings.hideSuccessfulDeployments;
+  document.getElementById('hideOldSuccessfulDeployments').checked = settings.hideOldSuccessfulDeployments;
   document.getElementById('hideDestroyedDeployments').checked = settings.hideDestroyedDeployments;
   document.getElementById('hideFailedDeployments').checked = settings.hideFailedDeployments;
   document.getElementById('autoExpandEnvironments').checked = settings.autoExpandEnvironments;
@@ -81,7 +77,7 @@ async function loadSettings() {
   document.getElementById('autoExpandLoadMore').checked = settings.autoExpandLoadMore;
   document.getElementById('expansionLimit').value = settings.expansionLimit;
   updateEnabledState(settings.enabled);
-  updateHideAllState();
+  updateHideSuccessfulState();
   updateEnvironmentsFullHeightState();
   updateExpansionLimitState();
 }
@@ -109,13 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
     saveSetting('enabled', newEnabled);
   });
 
-  document.getElementById('hideAllDeployments').addEventListener('change', (e) => {
-    saveSetting('hideAllDeployments', e.target.checked);
-    updateHideAllState();
+  document.getElementById('hideSuccessfulDeployments').addEventListener('change', (e) => {
+    saveSetting('hideSuccessfulDeployments', e.target.checked);
+    updateHideSuccessfulState();
   });
 
-  document.getElementById('hideOldDeployments').addEventListener('change', (e) => {
-    saveSetting('hideOldDeployments', e.target.checked);
+  document.getElementById('hideOldSuccessfulDeployments').addEventListener('change', (e) => {
+    saveSetting('hideOldSuccessfulDeployments', e.target.checked);
   });
 
   document.getElementById('hideDestroyedDeployments').addEventListener('change', (e) => {
