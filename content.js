@@ -9,6 +9,7 @@ let settings = {
   hideAllDeployments: false,
   hideOldDeployments: true,
   hideDestroyedDeployments: true,
+  hideFailedDeployments: true,
   autoExpandEnvironments: false,
   environmentsFullHeight: false,
   autoExpandLoadMore: false,
@@ -22,6 +23,7 @@ let expansionCount = 0;
 const CLASS_ALL_DEPLOYMENT = 'gh-hide-all-deployment';
 const CLASS_OLD_DEPLOYMENT = 'gh-hide-old-deployment';
 const CLASS_DESTROYED_DEPLOYMENT = 'gh-hide-destroyed-deployment';
+const CLASS_FAILED_DEPLOYMENT = 'gh-hide-failed-deployment';
 
 /**
  * Load settings from storage
@@ -56,6 +58,30 @@ function hideDestroyedDeployments() {
 function showDestroyedDeployments() {
   document.querySelectorAll(`.${CLASS_DESTROYED_DEPLOYMENT}`).forEach((el) => {
     el.classList.remove(CLASS_DESTROYED_DEPLOYMENT);
+  });
+}
+
+/**
+ * Hides failed deployments
+ */
+function hideFailedDeployments() {
+  const failedLabels = document.querySelectorAll('.TimelineItem .Label[title="Deployment Status Label: Failure"]');
+
+  failedLabels.forEach((label) => {
+    const container = label.closest('.js-socket-channel, .js-timeline-item');
+    if (container) {
+      container.dataset.failedDeployment = 'true';
+      container.classList.add(CLASS_FAILED_DEPLOYMENT);
+    }
+  });
+}
+
+/**
+ * Shows all failed deployments
+ */
+function showFailedDeployments() {
+  document.querySelectorAll(`.${CLASS_FAILED_DEPLOYMENT}`).forEach((el) => {
+    el.classList.remove(CLASS_FAILED_DEPLOYMENT);
   });
 }
 
@@ -191,13 +217,15 @@ function applySettings() {
     showAllDeployments();
     showOldDeployments();
     showDestroyedDeployments();
+    showFailedDeployments();
     return;
   }
 
   // Hide all takes precedence over individual hide settings
   if (settings.hideAllDeployments) {
     hideAllDeployments();
-    hideDestroyedDeployments(); // Destroyed deployments have different DOM structure
+    hideDestroyedDeployments();
+    hideFailedDeployments();
   } else {
     showAllDeployments();
 
@@ -211,6 +239,12 @@ function applySettings() {
       hideDestroyedDeployments();
     } else {
       showDestroyedDeployments();
+    }
+
+    if (settings.hideFailedDeployments) {
+      hideFailedDeployments();
+    } else {
+      showFailedDeployments();
     }
   }
 
@@ -239,12 +273,16 @@ function processPage() {
   if (settings.hideAllDeployments) {
     hideAllDeployments();
     hideDestroyedDeployments();
+    hideFailedDeployments();
   } else {
     if (settings.hideOldDeployments) {
       hideOldDeployments();
     }
     if (settings.hideDestroyedDeployments) {
       hideDestroyedDeployments();
+    }
+    if (settings.hideFailedDeployments) {
+      hideFailedDeployments();
     }
   }
 
@@ -289,7 +327,9 @@ async function init() {
           node.matches?.('[data-url*="/partials/deployed_event/"]') ||
           node.querySelector?.('[data-url*="/partials/deployed_event/"]') ||
           node.matches?.('.Label[title="Deployment Status Label: Destroyed"]') ||
-          node.querySelector?.('.Label[title="Deployment Status Label: Destroyed"]')
+          node.querySelector?.('.Label[title="Deployment Status Label: Destroyed"]') ||
+          node.matches?.('.Label[title="Deployment Status Label: Failure"]') ||
+          node.querySelector?.('.Label[title="Deployment Status Label: Failure"]')
         );
       })
     );
@@ -324,12 +364,16 @@ async function init() {
       if (settings.hideAllDeployments) {
         hideAllDeployments();
         hideDestroyedDeployments();
+        hideFailedDeployments();
       } else {
         if (settings.hideOldDeployments) {
           hideOldDeployments();
         }
         if (settings.hideDestroyedDeployments) {
           hideDestroyedDeployments();
+        }
+        if (settings.hideFailedDeployments) {
+          hideFailedDeployments();
         }
       }
     }

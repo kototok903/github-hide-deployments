@@ -179,3 +179,26 @@ input[type="checkbox"]:checked + .slider::after {
   outline: none;
   border-color: #4caf50;
 }
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid #333;
+}
+
+.reset-button {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.2s;
+}
+
+.reset-button:hover {
+  color: #e0e0e0;
+}

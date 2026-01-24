@@ -1,12 +1,13 @@
 // Default settings
 const DEFAULT_SETTINGS = {
   enabled: true,
-  hideAllDeployments: false,
+  hideAllDeployments: true,
   hideOldDeployments: true,
   hideDestroyedDeployments: true,
-  autoExpandEnvironments: false,
-  environmentsFullHeight: false,
-  autoExpandLoadMore: false,
+  hideFailedDeployments: true,
+  autoExpandEnvironments: true,
+  environmentsFullHeight: true,
+  autoExpandLoadMore: true,
   expansionLimit: 2,
 };
 
@@ -41,14 +42,16 @@ function updateEnabledState(enabled) {
   }
 }
 
-// Update old/destroyed deployment toggles based on hide-all state
+// Update old/destroyed/failed deployment toggles based on hide-all state
 function updateHideAllState() {
   const hideAllEnabled = document.getElementById('hideAllDeployments').checked;
   const hideOldRow = document.getElementById('hideOldDeploymentsRow');
   const hideDestroyedRow = document.getElementById('hideDestroyedDeploymentsRow');
+  const hideFailedRow = document.getElementById('hideFailedDeploymentsRow');
 
   hideOldRow.classList.toggle('disabled', hideAllEnabled);
   hideDestroyedRow.classList.toggle('disabled', hideAllEnabled);
+  hideFailedRow.classList.toggle('disabled', hideAllEnabled);
 }
 
 // Update environments full height toggle state based on autoExpandEnvironments toggle
@@ -72,6 +75,7 @@ async function loadSettings() {
   document.getElementById('hideAllDeployments').checked = settings.hideAllDeployments;
   document.getElementById('hideOldDeployments').checked = settings.hideOldDeployments;
   document.getElementById('hideDestroyedDeployments').checked = settings.hideDestroyedDeployments;
+  document.getElementById('hideFailedDeployments').checked = settings.hideFailedDeployments;
   document.getElementById('autoExpandEnvironments').checked = settings.autoExpandEnvironments;
   document.getElementById('environmentsFullHeight').checked = settings.environmentsFullHeight;
   document.getElementById('autoExpandLoadMore').checked = settings.autoExpandLoadMore;
@@ -118,6 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
     saveSetting('hideDestroyedDeployments', e.target.checked);
   });
 
+  document.getElementById('hideFailedDeployments').addEventListener('change', (e) => {
+    saveSetting('hideFailedDeployments', e.target.checked);
+  });
+
   document.getElementById('autoExpandEnvironments').addEventListener('change', (e) => {
     saveSetting('autoExpandEnvironments', e.target.checked);
     updateEnvironmentsFullHeightState();
@@ -136,5 +144,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const value = Math.max(1, Math.min(99, parseInt(e.target.value) || 2));
     e.target.value = value;
     saveSetting('expansionLimit', value);
+  });
+
+  // Reset to defaults
+  document.getElementById('resetButton').addEventListener('click', async () => {
+    await chrome.storage.sync.set(DEFAULT_SETTINGS);
+    loadSettings();
+
+    // Notify active GitHub tabs to update
+    const tabs = await chrome.tabs.query({ url: 'https://github.com/*/*/pull/*' });
+    for (const tab of tabs) {
+      chrome.tabs.sendMessage(tab.id, { type: 'settingsChanged', settings: DEFAULT_SETTINGS });
+    }
   });
 });

@@ -1,6 +1,7 @@
 /* Hide deployment messages */
 .gh-hide-all-deployment,
 .gh-hide-old-deployment,
-.gh-hide-destroyed-deployment {
+.gh-hide-destroyed-deployment,
+.gh-hide-failed-deployment {
   display: none !important;
 }

@@ -35,9 +35,15 @@
       <span class="slider"></span>
     </label>
 
-    <label class="switch-row subsetting last" id="hideDestroyedDeploymentsRow">
+    <label class="switch-row subsetting" id="hideDestroyedDeploymentsRow">
       <span class="label-text">Hide destroyed deployments</span>
       <input type="checkbox" id="hideDestroyedDeployments">
+      <span class="slider"></span>
+    </label>
+
+    <label class="switch-row subsetting last" id="hideFailedDeploymentsRow">
+      <span class="label-text">Hide failed deployments</span>
+      <input type="checkbox" id="hideFailedDeployments">
       <span class="slider"></span>
     </label>
 
@@ -66,6 +72,10 @@
     <div class="subsetting-row last" id="expansionLimitRow">
       <span class="label-text">Expansion limit</span>
       <input type="number" id="expansionLimit" min="1" max="99" value="2">
+    </div>
+
+    <div class="footer">
+      <button id="resetButton" class="reset-button">Reset to default</button>
     </div>
   </div>
   <script src="popup.js"></script>
