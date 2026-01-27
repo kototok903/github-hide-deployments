@@ -16,8 +16,11 @@ let settings = {
   expansionLimit: 2,
 };
 
-// Track expansion count for current page
+// Track expansion count for current page (for "Load more" feature)
 let expansionCount = 0;
+
+// Track if environments have been auto-expanded on this page
+let hasAutoExpandedEnvironments = false;
 
 // CSS classes for each type (so we can toggle them independently)
 const CLASS_SUCCESSFUL_DEPLOYMENT = 'gh-hide-successful-deployment';
@@ -105,9 +108,13 @@ function showSuccessfulDeployments() {
 }
 
 /**
- * Auto-expand the "Show environments" button
+ * Auto-expand the "Show environments" button (only once per page load)
  */
 function expandEnvironments() {
+  if (hasAutoExpandedEnvironments) {
+    return;
+  }
+
   const envContainers = document.querySelectorAll('.js-details-container.branch-action-item');
   envContainers.forEach((container) => {
     const button = container.querySelector('button.js-details-target[aria-expanded="false"]');
@@ -115,6 +122,7 @@ function expandEnvironments() {
       const closedSpan = button.querySelector('.statuses-toggle-closed');
       if (closedSpan && closedSpan.textContent.includes('Show environments')) {
         button.click();
+        hasAutoExpandedEnvironments = true;
       }
     }
   });
@@ -313,12 +321,35 @@ async function init() {
   // Re-run when GitHub dynamically updates the page (SPA navigation)
   document.addEventListener('turbo:load', () => {
     expansionCount = 0; // Reset expansion count on navigation
+    hasAutoExpandedEnvironments = false; // Reset auto-expand flag on navigation
     processPage();
   });
 
-  // Watch for dynamic content additions
+  // Watch for dynamic content additions and attribute changes
   const observer = new MutationObserver((mutations) => {
-    const hasNewDeployments = mutations.some((mutation) =>
+    // Separate attribute mutations from childList mutations
+    const attributeMutations = mutations.filter((m) => m.type === 'attributes');
+    const childListMutations = mutations.filter((m) => m.type === 'childList');
+
+    // Handle aria-expanded changes on environments toggle button
+    for (const mutation of attributeMutations) {
+      if (mutation.attributeName === 'aria-expanded') {
+        const button = mutation.target;
+        // Check if this is an environments toggle button
+        const container = button.closest('.js-details-container.branch-action-item');
+        if (container && button.matches('button.js-details-target')) {
+          const isExpanded = button.getAttribute('aria-expanded') === 'true';
+          if (isExpanded && settings.enabled && settings.environmentsFullHeight) {
+            setEnvironmentsFullHeight();
+          } else if (!isExpanded) {
+            // Always reset height when collapsed (so GitHub's collapse works)
+            resetEnvironmentsHeight();
+          }
+        }
+      }
+    }
+
+    const hasNewDeployments = childListMutations.some((mutation) =>
       Array.from(mutation.addedNodes).some((node) => {
         if (node.nodeType !== 1) return false;
         // Check both the node itself AND its descendants
@@ -334,7 +365,7 @@ async function init() {
     );
 
     // Check if new "Load more" buttons appeared or if content was expanded
-    const hasNewTimelineContent = mutations.some((mutation) =>
+    const hasNewTimelineContent = childListMutations.some((mutation) =>
       Array.from(mutation.addedNodes).some((node) => {
         if (node.nodeType !== 1) return false;
         // Check both the node itself AND its descendants
@@ -349,13 +380,21 @@ async function init() {
     );
 
     // Check if environments container appeared
-    const hasNewEnvironments = mutations.some((mutation) =>
+    const hasNewEnvironments = childListMutations.some((mutation) =>
       Array.from(mutation.addedNodes).some((node) => {
         if (node.nodeType !== 1) return false;
         return (
           node.matches?.('.js-details-container.branch-action-item') ||
           node.querySelector?.('.js-details-container.branch-action-item')
         );
+      })
+    );
+
+    // Check if merge-status-list was added/replaced (e.g., after new commit)
+    const hasNewMergeStatusList = childListMutations.some((mutation) =>
+      Array.from(mutation.addedNodes).some((node) => {
+        if (node.nodeType !== 1) return false;
+        return node.matches?.('.merge-status-list') || node.querySelector?.('.merge-status-list');
       })
     );
 
@@ -390,11 +429,24 @@ async function init() {
         setEnvironmentsFullHeight();
       }
     }
+
+    // Handle new merge-status-list (e.g., when GitHub re-renders after new commit)
+    // Only apply full height if the container is currently expanded
+    if (hasNewMergeStatusList && settings.enabled && settings.environmentsFullHeight) {
+      const expandedButton = document.querySelector(
+        '.js-details-container.branch-action-item button.js-details-target[aria-expanded="true"]'
+      );
+      if (expandedButton) {
+        setEnvironmentsFullHeight();
+      }
+    }
   });
 
   observer.observe(document.body, {
     childList: true,
     subtree: true,
+    attributes: true,
+    attributeFilter: ['aria-expanded'],
   });
 }
 
