@@ -77,9 +77,6 @@ async function loadSettings() {
   document.getElementById('autoExpandLoadMore').checked = settings.autoExpandLoadMore;
   document.getElementById('expansionLimit').value = settings.expansionLimit;
   updateEnabledState(settings.enabled);
-  updateHideSuccessfulState();
-  updateEnvironmentsFullHeightState();
-  updateExpansionLimitState();
 }
 
 // Save setting and notify content script
